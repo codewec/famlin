@@ -68,26 +68,28 @@ export function AppShell({
   });
   const hasUnreadChat = Object.values(unreadQuery.data ?? {}).some((count) => count > 0);
 
-  // Photos and Chat are family-scoped surfaces: a user in no families has
-  // nothing to see in either, so both tabs collapse for them (Feed and
-  // Profile remain). Shares the ['groups'] cache key the pages fetch with,
-  // seeded by App.tsx's parallel bootstrap fetch — so a groupless user's
-  // tabs are collapsed from the very first render, no flash. Until the query
-  // answers (loading or failed) reads as "has groups", so the nav never
-  // hides tabs it might have to show back; the tab currently being viewed
-  // also never disappears.
+  // Photos, Chat and Favorites are family-scoped surfaces: a user in no
+  // families has nothing to see in any of them, so all three collapse for
+  // them (Feed and Profile remain). Shares the ['groups'] cache key the
+  // pages fetch with, seeded by App.tsx's parallel bootstrap fetch — so a
+  // groupless user's tabs are collapsed from the very first render, no
+  // flash. Until the query answers (loading or failed) reads as "has
+  // groups", so the nav never hides tabs it might have to show back; the
+  // tab currently being viewed also never disappears.
   const groupsQuery = useQuery({ queryKey: ['groups'], queryFn: fetchGroups });
   const hasGroups = (groupsQuery.data?.length ?? 1) > 0;
   const showPhotosTab = (!!onPhotos || active === 'photos') && (hasGroups || active === 'photos');
   const showChatTab = (!!onChat || active === 'chat') && (hasGroups || active === 'chat');
+  const showFavoritesNav = (!!onFavorites || active === 'favorites') && (hasGroups || active === 'favorites');
   const photosNav = showPhotosTab ? onPhotos : undefined;
   const chatNav = showChatTab ? onChat : undefined;
+  const favoritesNav = showFavoritesNav ? onFavorites : undefined;
 
   function goTo(view: NavView) {
     if (view === 'feed') onFeed();
     else if (view === 'photos') photosNav?.();
     else if (view === 'chat') chatNav?.();
-    else if (view === 'favorites') onFavorites?.();
+    else if (view === 'favorites') favoritesNav?.();
     else onProfile();
   }
 
@@ -101,7 +103,7 @@ export function AppShell({
 
   const navItems: { view: NavView; icon: IconName; label: string; keys: string; onClick?: () => void; badge?: boolean; show: boolean }[] = [
     { view: 'feed', icon: 'home', label: t('tabs.feed'), keys: 'g f', onClick: onFeed, show: true },
-    { view: 'favorites', icon: 'bookmark', label: t('tabs.favorites'), keys: 'g b', onClick: onFavorites, show: !!onFavorites || active === 'favorites' },
+    { view: 'favorites', icon: 'bookmark', label: t('tabs.favorites'), keys: 'g b', onClick: favoritesNav, show: showFavoritesNav },
     { view: 'photos', icon: 'grid', label: t('tabs.photos'), keys: 'g p', onClick: photosNav, show: showPhotosTab },
     {
       view: 'chat',
@@ -179,12 +181,12 @@ export function AppShell({
           <BrandIcon size={30} />
           <span className="mobile-header-wordmark">{brandName}</span>
         </div>
-        {onFavorites && (
+        {favoritesNav && (
           <div className="mobile-header-actions">
             <button
               type="button"
               className="mobile-header-action"
-              onClick={onFavorites}
+              onClick={favoritesNav}
               aria-label={t('tabs.favorites')}
               title={t('shortcuts.hint', { label: t('tabs.favorites'), keys: 'g b' })}
             >

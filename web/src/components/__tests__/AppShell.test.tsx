@@ -94,12 +94,13 @@ describe('AppShell navigation', () => {
     expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument();
   });
 
-  it('hides the family-scoped Photos and Chat tabs for a user in no families', async () => {
+  it('hides Photos, Chat and Favorites for a user in no families', async () => {
     vi.mocked(fetchGroups).mockResolvedValue([]);
     renderShell();
 
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Photos' })).not.toBeInTheDocument());
     expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Favorites' })).not.toBeInTheDocument();
     // Feed and Profile stay.
     expect(screen.getAllByRole('button', { name: 'Feed' }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: 'Profile' }).length).toBeGreaterThan(0);
@@ -113,6 +114,7 @@ describe('AppShell navigation', () => {
 
     expect(screen.queryByRole('button', { name: 'Photos' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Chat' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Favorites' })).not.toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Feed' }).length).toBeGreaterThan(0);
   });
 
@@ -125,6 +127,7 @@ describe('AppShell navigation', () => {
 
     expect(screen.getAllByRole('button', { name: 'Photos' }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('button', { name: 'Chat' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Favorites' })).toHaveLength(2);
   });
 
   it('keeps the tab being viewed visible for a groupless user, hiding the other family-scoped one', async () => {
@@ -187,13 +190,21 @@ describe('AppShell navigation', () => {
     expect(onFavorites).toHaveBeenCalledTimes(1);
   });
 
+  it('disables the Favorites shortcut for a user in no families', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchGroups).mockResolvedValue([]);
+    const { onFavorites } = renderShell({}, []);
+    await user.keyboard('gb');
+    expect(onFavorites).not.toHaveBeenCalled();
+  });
+
   it('hides Favorites when the current page passes no onFavorites and isn\'t favorites', () => {
     renderShell({ onFavorites: undefined });
     expect(screen.queryByRole('button', { name: 'Favorites' })).not.toBeInTheDocument();
   });
 
   it('keeps Favorites visible while already on it, even with no onFavorites callback', () => {
-    renderShell({ active: 'favorites', onFavorites: undefined });
+    renderShell({ active: 'favorites', onFavorites: undefined }, []);
     expect(screen.getAllByRole('button', { name: 'Favorites' }).length).toBeGreaterThan(0);
   });
 });
